@@ -1,13 +1,8 @@
 
 #![feature(min_const_generics,associated_type_bounds)]
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+#![cfg_attr(feature="step",feature(step_trait,step_trait_ext))]
+
 
 pub mod clock;
 pub mod ratio;

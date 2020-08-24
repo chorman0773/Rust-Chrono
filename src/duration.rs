@@ -7,26 +7,141 @@ use std::cmp::*;
 
 use std::{hash::{Hasher, Hash}, convert::TryInto};
 
+#[cfg(feature="step")]
+use std::iter::Step;
+
+
+/// Marker Trait equivalent to std::chrono::treat_as_floating_point
+/// presently unused, though in the future, it will be used to assist in the implementations of the From and DurationCast
 pub unsafe trait TreatAsFloatingPoint{}
 
 unsafe impl TreatAsFloatingPoint for f32{}
 unsafe impl TreatAsFloatingPoint for f64{}
 
 
-pub struct Duration<Repr,_Period = Unit>{
-    value: Repr,
-    _phantom: PhantomData<_Period>
+/// Trait representing values of the Duration type
+pub trait DurationValues{
+    /// The Zero value for the type, IE. the addative identity.
+    const ZERO: Self;
+    /// The Minimum Value for the type
+    const MIN: Self;
+    /// The Maximum Value of the type
+    const MAX: Self;
 }
 
-impl<Repr, _Period: Period> Duration<Repr,_Period>{
-    pub fn new(x: Repr) -> Self{
+impl DurationValues for i8{
+    const ZERO: Self = 0;
+    const MIN: Self = -128;
+    const MAX: Self = 127;
+}
+
+impl DurationValues for i16{
+    const ZERO: Self = 0;
+    const MIN: Self = -32768;
+    const MAX: Self = 32767;
+}
+
+impl DurationValues for i32{
+    const ZERO: Self = 0;
+    const MIN: Self = i32::min_value();
+    const MAX: Self = i32::max_value();
+}
+
+impl DurationValues for i64{
+    const ZERO: Self = 0;
+    const MIN: Self = i64::min_value();
+    const MAX: Self = i64::max_value();
+}
+
+impl DurationValues for i128{
+    const ZERO: Self = 0;
+    const MIN: Self = i128::min_value();
+    const MAX: Self = i128::max_value();
+}
+
+impl DurationValues for isize{
+    const ZERO: Self = 0;
+    const MIN: Self = isize::min_value();
+    const MAX: Self = isize::max_value();
+}
+
+impl DurationValues for u8{
+    const ZERO: Self = 0;
+    const MIN: Self = 0;
+    const MAX: Self = 255;
+}
+
+impl DurationValues for u16{
+    const ZERO: Self = 0;
+    const MIN: Self = 0;
+    const MAX: Self = 65535;
+}
+
+impl DurationValues for u32{
+    const ZERO: Self = 0;
+    const MIN: Self = 0;
+    const MAX: Self = u32::max_value();
+}
+
+impl DurationValues for u64{
+    const ZERO: Self = 0;
+    const MIN: Self = 0;
+    const MAX: Self = u64::max_value();
+}
+
+impl DurationValues for u128{
+    const ZERO: Self = 0;
+    const MIN: Self = 0;
+    const MAX: Self = u128::max_value();
+}
+
+impl DurationValues for usize{
+    const ZERO: Self = 0;
+    const MIN: Self = 0;
+    const MAX: Self = usize::max_value();
+}
+
+impl DurationValues for f32{
+    const ZERO: Self = 0.0;
+    const MIN: Self = ::std::f32::MIN;
+    const MAX: Self = ::std::f32::MAX;
+}
+
+impl DurationValues for f64{
+    const ZERO: Self = 0.0;
+    const MIN: Self = ::std::f64::MIN;
+    const MAX: Self = ::std::f64::MAX;
+}
+
+/// A type which Represents a Duration, as a Repr value and a Period.
+/// Duration is a repr(transparent) structure of its Repr type, it is safe to transmute between Duration<Repr>, and Repr.
+/// There are no Limitations to _Period, though it is recommended that it be a specialization of crate::ratio::Ratio (and therefore implement the Period trait)
+/// 
+/// Note:
+/// The representation of Duration<Repr,Period> is entirely agnostic of Period
+#[repr(transparent)]
+pub struct Duration<Repr,Period = Unit>{
+    value: Repr,
+    _phantom: PhantomData<*mut Period>
+}
+
+impl<Repr: DurationValues,_Period> DurationValues for Duration<Repr,_Period>{
+    const ZERO: Self = Duration::new(Repr::ZERO);
+    const MIN: Self = Duration::new(Repr::MIN);
+    const MAX: Self = Duration::new(Repr::MAX);
+}
+
+impl<Repr, _Period> Duration<Repr,_Period>{
+    /// 
+    /// Constructs a new Duration from its representation. 
+    pub const fn new(x: Repr) -> Self{
         Self{value: x,_phantom: PhantomData}
     }
 
+    /// Obtains the representation of the Duration value
     pub fn into_inner(self) -> Repr{
         self.value
     }
-
 }
 
 
@@ -67,6 +182,14 @@ impl<R1: Add<R2>,R2,_P> Add<Duration<R2,_P>> for Duration<R1,_P>{
     }
 }
 
+impl<R1: AddAssign<R2>,R2,_P> AddAssign<Duration<R2,_P>> for Duration<R1,_P>{
+    fn add_assign(&mut self, rhs: Duration<R2,_P>) {
+        self.value.add_assign(rhs.value)
+    }
+}
+
+
+
 impl<R1: Sub<R2>,R2,_P> Sub<Duration<R2,_P>> for Duration<R1,_P>{
     type Output = Duration<<R1 as Sub<R2>>::Output,_P>;
 
@@ -75,6 +198,12 @@ impl<R1: Sub<R2>,R2,_P> Sub<Duration<R2,_P>> for Duration<R1,_P>{
             value: self.value - rhs.value,
             _phantom: PhantomData
         }
+    }
+}
+
+impl<R1: SubAssign<R2>,R2,_P> SubAssign<Duration<R2,_P>> for Duration<R1,_P>{
+    fn sub_assign(&mut self, rhs: Duration<R2,_P>) {
+        self.value.sub_assign(rhs.value)
     }
 }
 
@@ -89,6 +218,13 @@ impl<R1: Mul<R2>,R2,_P> Mul<R2> for Duration<R1,_P>{
     }
 }
 
+impl<R1: MulAssign<R2>,R2,_P> MulAssign<R2> for Duration<R1,_P>{
+    fn mul_assign(&mut self, rhs: R2) {
+        self.value.mul_assign(rhs)
+    }
+    
+}
+
 impl<R1: Div<R2>,R2,_P> Div<R2> for Duration<R1,_P>{
     type Output = Duration<<R1 as Div<R2>>::Output,_P>;
 
@@ -100,15 +236,11 @@ impl<R1: Div<R2>,R2,_P> Div<R2> for Duration<R1,_P>{
     }
 }
 
-impl<R1: Rem<R2>,R2,_P> Rem<R2> for Duration<R1,_P>{
-    type Output = Duration<<R1 as Rem<R2>>::Output,_P>;
-
-    fn rem(self,rhs: R2) -> Self::Output{
-        Duration{
-            value: self.value % rhs,
-            _phantom: PhantomData
-        }
+impl<R1: DivAssign<R2>,R2,_P> DivAssign<R2> for Duration<R1,_P>{
+    fn div_assign(&mut self, rhs: R2) {
+        self.value.div_assign(rhs)
     }
+    
 }
 
 impl<R1: Clone,_P> Clone for Duration<R1,_P>{
@@ -138,6 +270,8 @@ mod sealed{
 
 impl<R,_P> sealed::Sealed for Duration<R,_P>{}
 
+/// Trait for specializations of the Duration type. 
+/// 
 pub trait IsDuration : sealed::Sealed{
     type Repr: Sized;
     type Period: Period;
@@ -201,11 +335,28 @@ impl<R1,P1: Period,R2,P2: Period> DurationCast<Duration<R2,P2>> for Duration<R1,
             let value = (self.value.mul(num)).div(denom);
             DurationTryInto::<R2>::try_into(Duration{
                 value,
-                _phantom: PhantomData::<P2>
+                _phantom: PhantomData
             })
         }
+}
+
+
+#[cfg(feature="step")]
+unsafe impl<R1: Step,P1> Step for Duration<R1,P1>{
+    fn steps_between(start: &Self,end: &Self) -> Option<usize>{
+        Step::steps_between(&start.value,&end.value)
     }
 
+    fn forward_checked(start: Self, count: usize) -> Option<Self>{
+        Step::forward_checked(start.value,count)
+            .map(|value|Duration::new(value))
+    }
+
+    fn backward_checked(start: Self, count: usize) -> Option<Self>{
+        Step::backward_checked(start.value,count)
+            .map(|value|Duration::new(value))
+    }
+}
 
 pub type Years = Duration<i64,Ratio<31556952,1>>;
 pub type Months = Duration<i64,Ratio<2629746,1>>;
