@@ -92,7 +92,7 @@ impl<R: sealed::Sealed> sealed::Sealed for Reciprocal<R>{}
 
 impl<R: Period> Period for Reciprocal<R>{
     const NUMERATOR: i64 = R::DENOMINATOR;
-    const DENOMINATOR: i64 = R::DENOMINATOR;
+    const DENOMINATOR: i64 = R::NUMERATOR;
 }
 
 
