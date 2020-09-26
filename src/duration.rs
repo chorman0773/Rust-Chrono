@@ -290,6 +290,7 @@ pub trait DurationTryInto<R2>: IsDuration{
     fn try_into(self) -> Result<Duration<R2,Self::Period>,Self::Error>;
 }
 
+
 impl<Repr,_Period: Period> IsDuration for Duration<Repr,_Period>{
     type Repr = Repr;
     type Period = _Period;
