@@ -124,6 +124,9 @@ pub struct Duration<Repr,Period = Unit>{
     value: Repr,
     _phantom: PhantomData<*mut Period>
 }
+// Because the use of PhantomData<*mut Period> suppressed the auto impls. 
+unsafe impl<Repr: Send,Period> Send for Duration<Repr,Period>{}
+unsafe impl<Repr: Sync,Period> Sync for Duration<Repr,Period>{}
 
 impl<Repr: DurationValues,_Period> DurationValues for Duration<Repr,_Period>{
     const ZERO: Self = Duration::new(Repr::ZERO);
