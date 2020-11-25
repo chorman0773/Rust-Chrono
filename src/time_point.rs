@@ -8,6 +8,9 @@ pub struct TimePoint<Clock,Duration>{
     _phantom: PhantomData<*mut Clock>
 }
 
+unsafe impl<Duration: Send,Clock> Send for TimePoint<Clock,Duration>{}
+unsafe impl<Duration: Sync,Clock> Sync for TimePoint<Clock,Duration>{}
+
 impl<Clock,Duration: IsDuration + DurationValues> TimePoint<Clock,Duration>{
     pub const EPOCH: Self = Self::new(Duration::ZERO);
     pub const MIN: Self = Self::new(Duration::MIN);
