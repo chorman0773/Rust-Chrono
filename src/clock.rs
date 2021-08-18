@@ -20,6 +20,7 @@ pub trait Clock: Sized {
 pub unsafe trait TrivialClock: Clock
 where
     <Self as Clock>::Repr: Add + Sub + Div + Mul + PartialEq + PartialOrd + Copy,
+    <Self as Clock>::Duration: Add + Sub + Div + Mul + PartialEq + PartialOrd + Copy,
 {
 }
 
@@ -32,6 +33,7 @@ where
 pub unsafe trait Monotonic: Clock
 where
     <Self as Clock>::Repr: PartialOrd,
+    <Self as Clock>::Duration: PartialOrd,
 {
 }
 
