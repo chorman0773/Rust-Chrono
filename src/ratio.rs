@@ -82,7 +82,7 @@ impl<A: Period, B: Period> Period for RatioMultiply<A, B> {
         (A::NUMERATOR, A::DENOMINATOR),
         (B::NUMERATOR, B::DENOMINATOR),
     )
-    .0;
+    .1;
 }
 
 pub struct RatioDivide<A, B>(PhantomData<A>, PhantomData<B>);
@@ -99,7 +99,7 @@ impl<A: Period, B: Period> Period for RatioDivide<A, B> {
         (A::NUMERATOR, A::DENOMINATOR),
         (B::NUMERATOR, B::DENOMINATOR),
     )
-    .0;
+    .1;
 }
 
 pub struct Reciprocal<R>(PhantomData<R>);
